@@ -1,36 +1,45 @@
 import { useMemo } from 'react'
 import { useDispatch } from 'react-redux'
-import { Action, Dispatch } from 'redux'
+import { Action as ReduxAction, Dispatch } from 'redux'
+
+/**
+ * ============Action related type definitions============================
+ */
+
+/**
+ * action type
+ */
+type ActionType = string;
 
 /**
  * StringAction for all actions with string as the action type
- * @template TType: action type
- * @template TPayload: payload type
+ * @template A: action type
+ * @template P: payload type
  */
-export interface StringAction<
-  TType extends string = string,
-  TPayload = undefined
-> extends Action<TType> {
-  payload: TPayload;
+export interface Action<
+  A extends ActionType = ActionType,
+  P = never
+> extends ReduxAction<A> {
+  payload: P;
 }
 
 /**
  * Factory method to help create an action creator.
  * We use method overloads to allow proper typing on actions with or without a payload
- * @template TActionType: action type
- * @template TActionPayload action payload type
+ * @template A: action type
+ * @template P action payload type
  * @param actionType action type
  */
-function actionCreatorFactory<TActionType extends string, TActionPayload>(
-  actionType: TActionType
-): (payload: TActionPayload) => StringAction<TActionType, TActionPayload>
-function actionCreatorFactory<TActionType extends string>(
-  actionType: TActionType
-): () => StringAction<TActionType>
-function actionCreatorFactory(
-  actionType: string
-): (payload?: unknown) => StringAction<string, unknown> {
-  return (payload?: unknown): StringAction<string, unknown> => {
+function actionCreatorFactory<A extends ActionType, P>(
+  actionType: A
+): (payload: P) => Action<A, P>
+function actionCreatorFactory<A extends ActionType>(
+  actionType: A
+): () => Action<A>
+function actionCreatorFactory<A extends ActionType>(
+  actionType: A
+): (payload?: unknown) => Action<string, unknown> {
+  return (payload?: unknown): Action<string, unknown> => {
     return { type: actionType, payload: payload }
   }
 }
@@ -41,46 +50,51 @@ function actionCreatorFactory(
 export const createActionCreator = actionCreatorFactory
 
 /**
+ * ============Reducer related type definitions============================
+ */
+
+/**
  * Type for action to reducer(s) mapping.
  * Each action can have one or more reducers handling it.
- * @template TState: state type
- * @template TActionType: action type (string/string enum)
+ * @template S: state type
+ * @template A: action type
  */
-export type TActionReducerMap<TState, TActionType extends string> = {
-  readonly [actionType in TActionType]: ((
-    state: TState,
-    action: StringAction<actionType, unknown>
-  ) => TState)[]
-}
+export type Reducer<S, A extends Action<ActionType, unknown>> = (state: S, action: A) => S
 
 /**
  * Creates a sliced state reducer based on default state and a action to reducer(s) mapping.
  * This avoids the gigantic switch statement most people use.
- * @template TState: state type
- * @template TActionType: action type
+ * @template S: state type
+ * @template A: action type
  * @param defaultState: default value used to initialize the state
- * @param actionReducerMap: action to reducer(s) map on the current slice of state
+ * @param actionReducerMap: action to reducer(s) map on the current slice of state. One action can map to multiple reducers.
  */
-export const slicedReducerFactory = <TState, TActionType extends string>(
-  defaultState: TState,
-  actionReducerMap: TActionReducerMap<TState, TActionType>
+export const createSlicedReducer = <S, A extends Action<ActionType, unknown>>(
+  defaultState: S,
+  actionReducerMap: {
+    readonly [P in A['type']]: Reducer<S, A>[]
+  }
 ) => {
-  return (state: TState = defaultState, action: StringAction<TActionType, unknown>): TState => {
+  return (state: S = defaultState, action: A): S => {
     let newState = state
     const reducers = actionReducerMap[action.type]
     if (reducers) {
-      reducers.forEach((r) => (newState = r(newState, action)))
+      reducers.forEach((reduce: Reducer<S, A>) => (newState = reduce(newState, action)))
     }
     return newState
   }
 }
 
 /**
+ * ============Hooks based 'bounded action creator' related type definitions=========================
+ */
+
+/**
  * Type for a dispatchable action creator (action creator or thunk action creator)
  */
 export type DispatchableActionCreator = (
   ...args: any
-) => StringAction<string, any> | ((dispatch: Dispatch<any>) => any)
+) => Action<string, any> | ((dispatch: Dispatch<any>) => any)
 
 /**
  * A map type (dispatcher name to action creator mapping).
