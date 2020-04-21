@@ -34,13 +34,13 @@ describe('roth.js basic test', () => {
       return { ...s }
     }
 
-    const stringReducer: Reducer<State, Action<string, string>> = (s: State, action: Action<string, string>) => {
+    const stringReducer: Reducer<State, Action<string, string>> = (s, action) => {
       s.stringField = action.payload
       return { ...s }
     }
 
     let state = { numberField: 0, numberField2: 0, stringField: '' }
-    const slicedReducer = createSlicedReducer(state, {
+    const slicedReducer = createSlicedReducer<State, Action<'addnumber'> | Action<'setstring', string>>(state, {
       // one action triggers two number reducers
       addnumber: [numberReducer, numberReducer2],
       // single reducer for the string action
@@ -48,19 +48,19 @@ describe('roth.js basic test', () => {
     })
 
     // first reducer should update both numberField and numberField2
-    state = slicedReducer(state, { type: 'addnumber' } as Action<string>)
+    state = slicedReducer(state, { type: 'addnumber' } as Action<'addnumber'>)
     expect(state.numberField).toBe(1)
     expect(state.numberField2).toBe(1)
     expect(state.stringField).toBe('')
 
     // should update both numberField and numberField2 again, and no change to stringField
-    state = slicedReducer(state, { type: 'addnumber' } as Action<string>)
+    state = slicedReducer(state, { type: 'addnumber' } as Action<'addnumber'>)
     expect(state.numberField).toBe(2)
     expect(state.numberField2).toBe(2)
     expect(state.stringField).toBe('')
 
     // should only update stringField
-    state = slicedReducer(state, { type: 'setstring', payload: 'newstring' } as Action<string, string>)
+    state = slicedReducer(state, { type: 'setstring', payload: 'newstring' } as Action<'setstring', string>)
     expect(state.numberField).toBe(2)
     expect(state.numberField2).toBe(2)
     expect(state.stringField).toBe('newstring')
@@ -106,45 +106,55 @@ describe('roth.js complex scenario', () => {
   const seeDoctorActionCreator = createActionCreator<Activity.SeeDoctor>(Activity.SeeDoctor)
   type HeadActions = ReturnType<typeof sleepActionCreator> | ReturnType<typeof seeDoctorActionCreator> | ReturnType<typeof workOutActionCreator>
   type MuscleActions = ReturnType<typeof workOutActionCreator> | ReturnType<typeof seeDoctorActionCreator>
-  type WorkoutActions = ReturnType<typeof workOutActionCreator>;
 
-  const headacheReducer: Reducer<Head, HeadActions> = (state, action) => {
+  const sleepHeadacheReducer: Reducer<Head, ReturnType<typeof sleepActionCreator>> = (state, action) => {
     let hasHeadache = state.hasHeadache
-    if (action.type === Activity.Sleep) {
-      if (action.payload >= 8) {
-        // Sleeping more than 8 hours cures headache
-        hasHeadache = false
-      }
-    } else if (action.type === Activity.SeeDoctor) {
-      // seeing doctor cures headache
+    if (action.payload >= 8) {
+      // Sleeping more than 8 hours cures headache
       hasHeadache = false
-    } else if (action.type === Activity.Workout) {
-      if (action.payload >= 5) {
-        // you worked out too much, now you have headache
-        hasHeadache = true
-      }
     }
 
     return { ...state, hasHeadache }
   }
 
-  const musclePainReducer: Reducer<Body, MuscleActions> = (state, action) => {
+  const seeDoctorHeadacheReducer: Reducer<Head, ReturnType<typeof seeDoctorActionCreator>> = (state, action) => {
+    let hasHeadache = state.hasHeadache
+    // seeing doctor cures headache
+    hasHeadache = false
+
+    return { ...state, hasHeadache }
+  }
+
+  const workOutHeadacheReducer: Reducer<Head, ReturnType<typeof workOutActionCreator>> = (state, action) => {
+    let hasHeadache = state.hasHeadache
+    if (action.payload >= 5) {
+      // you worked out too much, now you have headache
+      hasHeadache = true
+    }
+
+    return { ...state, hasHeadache }
+  }
+
+  const workOutMusclePainReducer: Reducer<Body, ReturnType<typeof workOutActionCreator>> = (state, action) => {
     let hasMusclePain = state.hasMusclePain
-    if (action.type === Activity.Workout) {
-      const hours = action.payload as number
-      if (hours >= 5) {
-        // Working out too much develops muscle pain
-        hasMusclePain = true
-      }
-    } else if (action.type === Activity.SeeDoctor) {
-      // seeing doctor cures muscle pain
-      hasMusclePain = false
+    const hours = action.payload as number
+    if (hours >= 5) {
+      // Working out too much develops muscle pain
+      hasMusclePain = true
     }
 
     return { ...state, hasMusclePain } as Body
   }
 
-  const bodyMassIndexReducer: Reducer<Body, WorkoutActions> = (state, action) => {
+  const seeDoctormusclePainReducer: Reducer<Body, ReturnType<typeof seeDoctorActionCreator>> = (state, action) => {
+    let hasMusclePain = state.hasMusclePain
+    // seeing doctor cures muscle pain
+    hasMusclePain = false
+
+    return { ...state, hasMusclePain } as Body
+  }
+
+  const bodyMassIndexReducer: Reducer<Body, ReturnType<typeof workOutActionCreator>> = (state, action) => {
     if (action.payload >= 1 && action.payload <= 2) {
       // right amount of exercise improves body mass index
       return { ...state, bodyMassIndex: state.bodyMassIndex - 0.1 }
@@ -158,13 +168,13 @@ describe('roth.js complex scenario', () => {
 
   // create sliced reducers
   const slicedHeadReducer = createSlicedReducer<Head, HeadActions>(DefaultHead, {
-    [Activity.SeeDoctor]: [headacheReducer],
-    [Activity.Sleep]: [headacheReducer],
-    [Activity.Workout]: [headacheReducer]
+    [Activity.SeeDoctor]: [seeDoctorHeadacheReducer],
+    [Activity.Sleep]: [sleepHeadacheReducer],
+    [Activity.Workout]: [workOutHeadacheReducer]
   })
   const slicedBodyReducer = createSlicedReducer<Body, MuscleActions>(DefaultBody, {
-    [Activity.Workout]: [musclePainReducer, bodyMassIndexReducer],
-    [Activity.SeeDoctor]: [musclePainReducer]
+    [Activity.Workout]: [workOutMusclePainReducer, bodyMassIndexReducer],
+    [Activity.SeeDoctor]: [seeDoctormusclePainReducer]
   })
 
   // combine into a root reducer

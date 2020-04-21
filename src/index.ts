@@ -17,7 +17,7 @@ type ActionType = string;
  * @template P    payload type
  */
 export interface Action<
-  A extends ActionType = ActionType,
+  A extends ActionType,
   P = never
 > extends ReduxAction<A> {
   payload: P;
@@ -38,8 +38,8 @@ function actionCreatorFactory<A extends ActionType>(
 ): () => Action<A>
 function actionCreatorFactory<A extends ActionType>(
   actionType: A
-): (payload?: unknown) => Action<string, unknown> {
-  return (payload?: unknown): Action<string, unknown> => {
+): (payload?: unknown) => Action<A, unknown> {
+  return (payload?: unknown): Action<A, unknown> => {
     return { type: actionType, payload: payload }
   }
 }
@@ -72,7 +72,7 @@ export type Reducer<S, A extends Action<ActionType, unknown>> = (state: S, actio
 export const createSlicedReducer = <S, A extends Action<ActionType, unknown>>(
   defaultState: S,
   actionReducerMap: {
-    readonly [P in A['type']]: Reducer<S, A>[]
+    readonly [P in A['type']]: Reducer<S, A extends Action<P, infer X> ? Action<P, X> : never>[]
   }
 ) => {
   return (state: S = defaultState, action: A): S => {

@@ -1,6 +1,6 @@
 {
   "name": "roth.js",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "roth.js (Redux On The Hooks) is a library to help simplify redux state and action management using React Hooks.",
   "author": "sidecus",
   "license": "MIT",
@@ -17,7 +17,7 @@
     "prepublish": "run-s build",
     "test": "run-s test:unit test:lint test:build",
     "test:build": "run-s build",
-    "test:lint": "eslint .",
+    "test:lint": "eslint **/*.ts",
     "test:unit": "cross-env CI=1 react-scripts test --env=jsdom",
     "test:watch": "react-scripts test --env=jsdom",
     "predeploy": "cd example && npm install && npm run build",
@@ -34,7 +34,6 @@
     "@typescript-eslint/eslint-plugin": "^2.26.0",
     "@typescript-eslint/parser": "^2.26.0",
     "@types/react-redux": "^7.1.7",
-    "@types/redux": "^3.6.0",
     "microbundle-crl": "^0.13.8",
     "babel-eslint": "^10.0.3",
     "cross-env": "^7.0.2",
@@ -54,7 +53,8 @@
     "react": "^16.13.1",
     "react-scripts": "^3.4.1",
     "redux": "^4.0.5",
-    "react-redux": "^7.2.0"
+    "react-redux": "^7.2.0",
+    "react-dom": "^16.13.1"
   },
   "files": [
     "dist"
