@@ -1,9 +1,9 @@
 # roth.js
 
 > roth.js (Redux On The Hooks) is a TypeScript library to help simplify redux state and action management using React Hooks.
-> It helps avoid big switches in your reducers. It also provides custom hooks to help you easily dispatch your actions (normal or thunk) in your function components.
+> It helps avoid big switches in your reducers. It also provides custom hooks to help you easily dispatch your actions (whether they are plain actions or thunk actions) in your function components.
 
-[![NPM](https://img.shields.io/npm/v/roth.js.svg)](https://www.npmjs.com/package/roth.js) [![JavaScript Style Guide](https://img.shields.io/badge/code_style-standard-brightgreen.svg)](https://standardjs.com)
+[![NPM](https://img.shields.io/npm/v/roth.js.svg)](https://www.npmjs.com/package/roth.js) [![JavaScript Style Guide](https://img.shields.io/badge/code_style-standard-brightgreen.svg)](https://standardjs.com)![CI](https://github.com/sidecus/roth.js/workflows/CI/badge.svg)
 
 ## Install
 
@@ -14,9 +14,7 @@ npm install --save roth.js
 ## Usage
 Core apis: ```createActionCreator```, ```createSlicedReducer```, ```useMemoizedBoundActionCreators```
 
-[Code sample](https://github.com/sidecus/reactstudy/tree/master/src/ReduxHooks)
-
-[Demo site](https://sidecus.github.io/reactstudy/)
+Here is a complicated sample: [Code sample](https://github.com/sidecus/reactstudy/tree/master/src/ReduxHooks) and its [Demo site](https://sidecus.github.io/reactstudy/)
 
 ### Define store
 ```typescript
