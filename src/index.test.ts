@@ -1,5 +1,5 @@
 import { Dispatch, combineReducers } from 'redux'
-import { createActionCreator, Action, createSlicedReducer, namedDispatchersFactory, Reducer } from './index'
+import { createActionCreator, Action, createSlicedReducer, Reducer, createdBoundActionCreators } from './index'
 
 describe('roth.js basic test', () => {
   test('createActionCreator creates proper action creators', () => {
@@ -23,7 +23,7 @@ describe('roth.js basic test', () => {
       stringField: string;
   };
 
-  test('createSlicedReducer creates correct sliced state reducer', () => {
+  test('createSlicedReducer creates correct reducer for a slice of the state', () => {
     const numberReducer: Reducer<State, Action<string>> = (s: State) => {
       s.numberField = s.numberField + 1
       return { ...s }
@@ -66,14 +66,15 @@ describe('roth.js basic test', () => {
     expect(state.stringField).toBe('newstring')
   })
 
+  // Fake dispatch which just returns the action object for UT purpose.
   // TODO[sidecus] - switch to redux-mock-store
-  const dispatchMock: Dispatch<Action<string, any>> = <T extends Action<string, any>>(action: T) => action
+  const dispatchMock: Dispatch<Action<string, unknown>> = <T extends Action<string, unknown>>(action: T) => action
 
-  test('dispatcherMapFactory constructs correct named dispatcher map', () => {
-    const result = namedDispatchersFactory(dispatchMock, {
+  test('createdNamedBoundedActionCreators constructs correct named bounded action creator map', () => {
+    const result = createdBoundActionCreators(dispatchMock, {
       setNumber: (p: number) => { return { type: 'setNumber', payload: p } },
       setString: (p: string) => { return { type: 'setString', payload: p } },
-      noPayload: () => { return { type: 'noPayload' } as Action<string, any> }
+      noPayload: () => { return { type: 'noPayload' } as Action<string> }
     })
 
     expect(result.setNumber(3)).toEqual({ type: 'setNumber', payload: 3 })
@@ -99,7 +100,7 @@ describe('roth.js complex scenario', () => {
       SeeDoctor = 'see doctor',
   }
 
-  // action creators
+  // action creators and action types
   const workOutActionCreator = createActionCreator<Activity.Workout, number>(Activity.Workout)
   const sleepActionCreator = createActionCreator<Activity.Sleep, number>(Activity.Sleep)
   const seeDoctorActionCreator = createActionCreator<Activity.SeeDoctor>(Activity.SeeDoctor)
@@ -152,10 +153,10 @@ describe('roth.js complex scenario', () => {
     return state
   }
 
-  // setup overall reducer
   const DefaultHead = { hasHeadache: false }
   const DefaultBody = { hasMusclePain: false, bodyMassIndex: 25 }
 
+  // create sliced reducers
   const slicedHeadReducer = createSlicedReducer<Head, HeadActions>(DefaultHead, {
     [Activity.SeeDoctor]: [headacheReducer],
     [Activity.Sleep]: [headacheReducer],
@@ -165,6 +166,8 @@ describe('roth.js complex scenario', () => {
     [Activity.Workout]: [musclePainReducer, bodyMassIndexReducer],
     [Activity.SeeDoctor]: [musclePainReducer]
   })
+
+  // combine into a root reducer
   const rootReducer = combineReducers({ head: slicedHeadReducer, body: slicedBodyReducer })
   const defaultState = { head: DefaultHead, body: DefaultBody }
 
