@@ -3,7 +3,7 @@
 > roth.js (Redux On The Hooks) is a TypeScript library to help simplify redux state and action management using React Hooks.
 > It helps avoid big switches in your reducers. It also provides custom hooks to help you easily dispatch your actions (whether they are plain actions or thunk actions) in your function components.
 
-[![NPM](https://img.shields.io/npm/v/roth.js.svg)](https://www.npmjs.com/package/roth.js) [![JavaScript Style Guide](https://img.shields.io/badge/code_style-standard-brightgreen.svg)](https://standardjs.com)![CI](https://github.com/sidecus/roth.js/workflows/CI/badge.svg)
+[![NPM](https://img.shields.io/npm/v/roth.js.svg)](https://www.npmjs.com/package/roth.js) [![JavaScript Style Guide](https://img.shields.io/badge/code_style-standard-brightgreen.svg)](https://standardjs.com)![CI](https://github.com/sidecus/roth.js/workflows/CI/badge.svg?branch=master)
 
 ## Install
 
