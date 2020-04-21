@@ -13,7 +13,9 @@ npm install --save roth.js
 
 ## Usage
 Core apis: ```createActionCreator```, ```createSlicedReducer```, ```useMemoizedBoundActionCreators```
+
 [Code sample](https://github.com/sidecus/reactstudy/tree/master/src/ReduxHooks)
+
 [Demo site](https://sidecus.github.io/reactstudy/)
 
 ### Define store
