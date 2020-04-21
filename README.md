@@ -12,8 +12,9 @@ npm install --save roth.js
 ```
 
 ## Usage
-
 Core apis: ```createActionCreator```, ```createSlicedReducer```, ```useMemoizedBoundActionCreators```
+[Code sample](https://github.com/sidecus/reactstudy/tree/master/src/ReduxHooks)
+[Demo site](https://sidecus.github.io/reactstudy/)
 
 ### Define store
 ```typescript
@@ -39,7 +40,7 @@ const state1Reducer = createSlicedReducer<State1Type, ReturnType<typeof updateSt
 
 const updateState2Reducer: Reducer<State2Type, ReturnType<typeof updateState2>> = (state, action) => {...}
 const resetState2Reducer: Reducer<State2Type, ReturnType<typeof resetStates>> = (state, action) => {...}
-const state2Reducer = createSlicedReducer<State2Type, ReturnType<typeof updateState1> | ReturnType<typeof resetStates>>(DefaultState2, {
+const state2Reducer = createSlicedReducer<State2Type, ReturnType<typeof updateState2> | ReturnType<typeof resetStates>>(DefaultState2, {
   [MyActions.UPDATE_STATE_2]: [updateState2Reducer],
   [MyActions.RESET_BOTH_STATES]: [resetState2Reducer]
 })
