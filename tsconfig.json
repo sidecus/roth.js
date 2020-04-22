@@ -34,6 +34,6 @@
   "exclude": [
     "node_modules",
     "dist",
-    "example"
+    ".rts2_cache_*"
   ]
 }
