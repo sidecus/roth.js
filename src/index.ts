@@ -138,16 +138,23 @@ export const createdBoundActionCreators = <M extends NamedActionCreators>(
 
 /**
  * Custom hooks to create an object containing named action creators with dispatch bound automatically using redux hooks.
+ * @template M  type of the object contains named action creators (name to primitive action creator or thunk action creator)
+ * @param map   the object contains named action creators.
+ */
+export const useBoundActionCreators = <M extends NamedActionCreators>(map: M): BoundActionCreators<M> => {
+  const dispatch = useDispatch()
+  return createdBoundActionCreators(dispatch, map)
+}
+
+/**
+ * Custom hooks to create a memoized object containing named action creators with dispatch bound automatically using redux hooks.
  * Object is memoized so won't get created each time you use this custom hooks.
  * @template M  type of the object contains named action creators (name to primitive action creator or thunk action creator)
  * @param map   the object contains named action creators. !!IMPORTANT!! - Don't pass a function scoped object for this
  * otherwise it'll defeat the memoization.
  */
-export const useMemoizedBoundActionCreators = <M extends NamedActionCreators>(
-  map: M
-): BoundActionCreators<M> => {
+export const useMemoizedBoundActionCreators = <M extends NamedActionCreators>(map: M): BoundActionCreators<M> => {
   const dispatch = useDispatch()
-
   // Use useMemo to memoize the returned BoundedNamedActionCreators object so that we don't recreate it each time createdNamedBoundedActionCreators is called.
   const memoizedDispatchers = useMemo(
     () => createdBoundActionCreators(dispatch, map),

@@ -12,16 +12,16 @@ npm install --save roth.js
 ```
 
 ## Usage
-This library exposes 3 core apis: ```createActionCreator```, ```createSlicedReducer```, ```useMemoizedBoundActionCreators```
+This library exposes 3 core apis: ```createActionCreator```, ```createSlicedReducer```, ```useBoundActionCreators``` and ```useMemoizedBoundActionCreators```.
 
-Here is a full sample: [Code sample](https://github.com/sidecus/reactstudy/tree/master/src/ReduxHooks) and its corresponding [Demo site](https://sidecus.github.io/reactstudy/).
-The example also leverages other popular libraries e.g. reselect.js/redux-thunk etc.
+Here is a full sample project using this to implement a TODO app: [Code sample](https://github.com/sidecus/reactstudy/tree/master/src/ReduxHooks). Here is the corresponding [Demo site](https://sidecus.github.io/reactstudy/).
+The sample project also leverages other popular libraries e.g. reselect.js/redux-thunk etc.
 
 Below code fragments shows how the core apis can be used in your code.
 
-### Define actions, reducers and store
+### Define actions (using string enum)
 ```tsx
-// Define action creators using *createActionCreator*
+// Define action creators using *createActionCreator* - string enum is required
 enum MyActions {
   UPDATE_STATE_1 = 'UPDATE_STATE_1',
   UPDATE_STATE_2 = 'UPDATE_STATE_2',
@@ -30,49 +30,63 @@ enum MyActions {
 const updateState1 = createActionCreator<MyActions.UPDATE_STATE_1, number>(MyActions.UPDATE_STATE_1)
 const updateState2 = createActionCreator<MyActions.UPDATE_STATE_2, number>(MyActions.UPDATE_STATE_2)
 const resetStates = createActionCreator<MyActions.RESET_BOTH_STATES>(MyActions.RESET_BOTH_STATES)
-type updateState1Action = ReturnType<typeof updateState1>
-type updateState2Action = ReturnType<typeof updateState2>
-type resetAction = ReturnType<typeof resetStates>
+type UpdateState1Action = ReturnType<typeof updateState1>
+type UpdateState2Action = ReturnType<typeof updateState2>
+type ResetAction = ReturnType<typeof resetStates>
+type State1Actions = UpdateState1Action | ResetAction
+type State2Actions = UpdateState2Action | ResetAction
+```
 
-// Define reducers. one action can be handled by multiple reducers on different state slices.
-// Use *createSlicedReducer* to glue reducers on the same state together without using switch statements
-const updateState1Reducer: Reducer<State1Type, updateState1Action> = (state, action) => {...}
-const resetState1Reducer: Reducer<State1Type, resetAction> = (state, action) => {...}
-const state1Reducer = createSlicedReducer<State1Type, updateState1Action | resetAction>(DefaultState1, {
-  [MyActions.UPDATE_STATE_1]: [updateState1Reducer],
-  [MyActions.RESET_BOTH_STATES]: [resetState1Reducer]
+### Define reducers and create store
+```tsx
+// Define reducers.
+type UpdateState1Reducer = Reducer<State1Type, UpdateState1Action>
+type ResetState1Reducer = Reducer<State1Type, ResetAction>
+type UpdateState2Reducer = Reducer<State2Type, UpdateState2Action>
+type ResetState2Reducer = Reducer<State2Type, ResetAction>
+const updateState1Reducer: UpdateState1Reducer = (state, action) => {...}
+const resetState1Reducer: Reducer<State1Type, ResetAction> = (state, action) => {...}
+const updateState2Reducer: UpdateState2Reducer = (state, action) => {...}
+const resetState2Reducer: ResetState2Reducer = (state, action) => {...}
+
+// Use *createSlicedReducer* to glue reducers on the same sliced state together
+// without having to use switch statements.
+// This can also be achieved with combineReducers but it'll likely result in states
+// being sliced too much. It's your call to make.
+const state1Reducer = createSlicedReducer<State1Type, State1Actions>(
+  DefaultState1, {
+    [MyActions.UPDATE_STATE_1]: [updateState1Reducer],
+    [MyActions.RESET_BOTH_STATES]: [resetState1Reducer]
+})
+const state2Reducer = createSlicedReducer<State2Type, State2Actions>(
+  DefaultState2, {
+    [MyActions.UPDATE_STATE_2]: [updateState2Reducer],
+    [MyActions.RESET_BOTH_STATES]: [resetState2Reducer]
 })
 
-const updateState2Reducer: Reducer<State2Type, updateState2Action> = (state, action) => {...}
-const resetState2Reducer: Reducer<State2Type, resetAction> = (state, action) => {...}
-const state2Reducer = createSlicedReducer<State2Type, updateState2Action | resetAction>(DefaultState2, {
-  [MyActions.UPDATE_STATE_2]: [updateState2Reducer],
-  [MyActions.RESET_BOTH_STATES]: [resetState2Reducer]
-})
-
-// Get root reducer and construct store as usual
+// Get root reducer and construct store as what you normally do
 const rootReducer = combineReducers({ state1: state1Reducer, state2: state2Reducer})
 export const store = createStore(rootReducer, composeWithDevTools(applyMiddleware(thunk)))
+```
 
+### Define custom hook to expose the "bound" actions where dispatch is handled automatically for you
+```tsx
 // Define a custom hook which calls *useMemoizedBoundActionCreators* to expose named bound action creators.
-// You can also call useMemoizedBoundActionCreators direclty from your code.
+// You can also call useMemoizedBoundActionCreators direclty from your code but this is more convenient.
 const namedActionCreators = {
   dispatchUpdateState1: updateState1,
   dispatchUpdateState2: updateState2,
   dispatchResetStates: resetStates
 }
-export const useBoundActionCreators = () => useMemoizedBoundActionCreators(namedActionCreators)
-
+export const useDispatchers = () => useMemoizedBoundActionCreators(namedActionCreators)
 ```
 
-### Now you can use the store and the custom hooks in your function components
+### Use the store and the custom hook in your function components
 ```tsx
-export const SomeComponent = () => {
-  const { dispatchUpdateState1, dispatchResetStates } = useBoundActionCreators();
-  ...
-
+export const ComponentWithState1 = () => {
+  const { dispatchUpdateState1, dispatchResetStates } = useDispatchers();
   return (
-    <button onclick={() => dispatchUpdateState1(x + 1)}>Update State#1</button>
+    <button onclick={() => dispatchUpdateState1(Math.random())}>Update State#1</button>
     <button onclick={() => dispatchResetStates()}>Reset States</button>
   )
 }
