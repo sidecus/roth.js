@@ -20,5 +20,5 @@ dist
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-
 .rts2_cache_*
+react-app-env.d.ts

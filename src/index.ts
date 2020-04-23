@@ -61,6 +61,10 @@ export const createActionCreator = actionCreatorFactory
  */
 export type Reducer<S, A extends Action<ActionType, unknown>> = (state: S, action: A) => S
 
+type ActionReducersMap<S, A extends Action<ActionType, unknown>> = {
+  readonly [P in A['type']]: Reducer<S, A extends Action<P, infer X> ? Action<P, X> : never>[]
+}
+
 /**
  * Creates a sliced state reducer based on default state and a action to reducer(s) mapping.
  * This avoids the gigantic switch statement most people use.
@@ -71,9 +75,7 @@ export type Reducer<S, A extends Action<ActionType, unknown>> = (state: S, actio
  */
 export const createSlicedReducer = <S, A extends Action<ActionType, unknown>>(
   defaultState: S,
-  actionReducerMap: {
-    readonly [P in A['type']]: Reducer<S, A extends Action<P, infer X> ? Action<P, X> : never>[]
-  }
+  actionReducerMap: ActionReducersMap<S, A>
 ) => {
   return (state: S = defaultState, action: A): S => {
     let newState = state
@@ -89,25 +91,26 @@ export const createSlicedReducer = <S, A extends Action<ActionType, unknown>>(
  * ============Hooks based bound action creator related type definitions=========================
  */
 
- // eslint-disable-next-line @typescript-eslint/no-explicit-any
- type AnyDispatch = Dispatch<any>
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AnyDispatch = Dispatch<any>
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type DispatchableAction = (...args: any) => (Action<ActionType, unknown> | ((dispatch: AnyDispatch) => unknown))
+
+type DispatchableActionProperties<T> = { [K in keyof T]: T[K] extends DispatchableAction ? K : never }[keyof T]
 
 /**
- * A type with named properties as action creators (normal action or thunk action).
- * @template T  "dispatchers" object shape
+ * A type with only name to action creator mapping (action creator can create normal action or thunk).
+ * @template M  A type which contains name to action creator mapping
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type NamedActionCreators<T = any> = {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  readonly [K in keyof T]: (...args: any) => (Action<string, unknown> | ((dispatch: AnyDispatch) => unknown))
-}
+type NamedActionCreators<M> = Pick<M, DispatchableActionProperties<M>>
 
 /**
  * Type used by createdBoundActionCreators as the return type.
- * It's an object with named properties as bounded action creators
+ * It's an object with named properties as bounded action creators. Only difference with NamedActionCreators is the return type (unknown after dispatch)
  * @template M  NamedActionCreators
  */
-type BoundActionCreators<M extends NamedActionCreators> = {
+type BoundActionCreators<M extends NamedActionCreators<M>> = {
   [K in keyof M]: (...args: Parameters<M[K]>) => unknown
 }
 
@@ -118,7 +121,7 @@ type BoundActionCreators<M extends NamedActionCreators> = {
  * @param dispatch  dispatch object
  * @param map       dispatcher name to action creator map.
  */
-export const createdBoundActionCreators = <M extends NamedActionCreators>(
+export const createdBoundActionCreators = <M extends NamedActionCreators<M>>(
   dispatch: AnyDispatch,
   map: M
 ): BoundActionCreators<M> => {
@@ -126,8 +129,7 @@ export const createdBoundActionCreators = <M extends NamedActionCreators>(
 
   for (const key in map) {
     // For each key in the map object, create a new object which has same set of keys but with action creators replaced with bound action creators
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    result[key] = (...args: any): any => {
+    result[key] = (...args: unknown[]): unknown => {
       const actionCreator = map[key]
       return dispatch(actionCreator(...args))
     }
@@ -141,7 +143,7 @@ export const createdBoundActionCreators = <M extends NamedActionCreators>(
  * @template M  type of the object contains named action creators (name to primitive action creator or thunk action creator)
  * @param map   the object contains named action creators.
  */
-export const useBoundActionCreators = <M extends NamedActionCreators>(map: M): BoundActionCreators<M> => {
+export const useBoundActionCreators = <M extends NamedActionCreators<M>>(map: M): BoundActionCreators<M> => {
   const dispatch = useDispatch()
   return createdBoundActionCreators(dispatch, map)
 }
@@ -153,7 +155,7 @@ export const useBoundActionCreators = <M extends NamedActionCreators>(map: M): B
  * @param map   the object contains named action creators. !!IMPORTANT!! - Don't pass a function scoped object for this
  * otherwise it'll defeat the memoization.
  */
-export const useMemoizedBoundActionCreators = <M extends NamedActionCreators>(map: M): BoundActionCreators<M> => {
+export const useMemoizedBoundActionCreators = <M extends NamedActionCreators<M>>(map: M): BoundActionCreators<M> => {
   const dispatch = useDispatch()
   // Use useMemo to memoize the returned BoundedNamedActionCreators object so that we don't recreate it each time createdNamedBoundedActionCreators is called.
   const memoizedDispatchers = useMemo(

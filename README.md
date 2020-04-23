@@ -19,7 +19,7 @@ The sample project also leverages other popular libraries e.g. reselect.js/redux
 
 Below code fragments shows how the core apis can be used in your code.
 
-### Define actions (using string enum)
+### use createActionCreator and string enum to define actions
 ```tsx
 // Define action creators using *createActionCreator* - string enum is required
 enum MyActions {
@@ -37,7 +37,27 @@ type State1Actions = UpdateState1Action | ResetAction
 type State2Actions = UpdateState2Action | ResetAction
 ```
 
-### Define reducers and create store
+### Use useBoundActionCreators or useMemoizedBoundActionCreators hooks to expose "bound" action creators
+```tsx
+// Define the action creators object - don't put this in the function scope if you use useMemoizedBoundActionCreators
+const namedActionCreators = {
+  dispatchUpdateState1: updateState1,
+  dispatchUpdateState2: updateState2,
+  dispatchResetStates: resetStates
+}
+
+// Call *useMemoizedBoundActionCreators* or *useBoundActionCreators* to create named bound action creators,
+// and use them in your component
+export const State1Component = () => {
+  const { dispatchUpdateState1, dispatchResetStates } = useMemoizedBoundActionCreators(namedActionCreators)()
+  return (
+    <button onclick={() => dispatchUpdateState1(Math.random())}>Update State#1</button>
+    <button onclick={() => dispatchResetStates()}>Reset States</button>
+  )
+}
+```
+
+### Bonus - Use createSlicedReducer to help define reducers and avoid big switches
 ```tsx
 // Define reducers.
 type UpdateState1Reducer = Reducer<State1Type, UpdateState1Action>
@@ -67,30 +87,6 @@ const state2Reducer = createSlicedReducer<State2Type, State2Actions>(
 // Get root reducer and construct store as what you normally do
 const rootReducer = combineReducers({ state1: state1Reducer, state2: state2Reducer})
 export const store = createStore(rootReducer, composeWithDevTools(applyMiddleware(thunk)))
-```
-
-### Define custom hook to expose the "bound" actions where dispatch is handled automatically for you
-```tsx
-// Define a custom hook which calls *useMemoizedBoundActionCreators* to expose named bound action creators.
-// You can also call useMemoizedBoundActionCreators direclty from your code but this is more convenient.
-const namedActionCreators = {
-  dispatchUpdateState1: updateState1,
-  dispatchUpdateState2: updateState2,
-  dispatchResetStates: resetStates
-}
-export const useDispatchers = () => useMemoizedBoundActionCreators(namedActionCreators)
-```
-
-### Use the store and the custom hook in your function components
-```tsx
-export const ComponentWithState1 = () => {
-  const { dispatchUpdateState1, dispatchResetStates } = useDispatchers();
-  return (
-    <button onclick={() => dispatchUpdateState1(Math.random())}>Update State#1</button>
-    <button onclick={() => dispatchResetStates()}>Reset States</button>
-  )
-}
-
 ```
 
 ## License

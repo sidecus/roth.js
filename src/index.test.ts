@@ -1,6 +1,37 @@
 import { Dispatch, combineReducers } from 'redux'
 import { createActionCreator, Action, createSlicedReducer, Reducer, createdBoundActionCreators } from './index'
 
+/**
+ * Test Action creator typing
+ */
+/*
+describe('roth.js createActionCreator type test', () => {
+  test('createActionCreator typings', () => {
+    type StringUnionToIntersection<U> = (U extends string ? ((k: U) => void) : never) extends ((k: infer I) => void) ? I : never
+    type StringUnionGuard<U> = StringUnionToIntersection<U> extends never ? U : never
+    type a = StringUnionGuard<'a' | string>
+    type b = StringUnionGuard<'a' | 'b'>
+    type c = StringUnionGuard<4 | 3>
+    type d = StringUnionGuard<'4' | 3>
+    type e = StringUnionGuard<string>
+    type f = StringUnionGuard<'a'>
+    type h = StringUnionToIntersection<'a'>
+    type i = StringUnionToIntersection<string>
+    type j = StringUnionGuard<'a'>
+
+    const numberFunc = (arg: number) => { return { type: 'numberFunc', payload: arg } as Action<ActionType, number> }
+    const stringFunc = (arg: string) => { return { type: 'stringFunc', payload: arg } as Action<ActionType, string> }
+    const map = { numberFunc: numberFunc, stringFunc: stringFunc, value: 3 }
+    type MapProperties = DispatchableActionPropertyNames<typeof map>
+    type MapType = NamedActionCreators<typeof map>
+    type NamedMapType = BoundActionCreators<MapType>
+  })
+})
+*/
+
+/**
+ * Test basic functionality for action creator, reducer and bound action creator
+ */
 describe('roth.js basic test', () => {
   test('createActionCreator creates proper action creators', () => {
     // number as payload
@@ -83,6 +114,9 @@ describe('roth.js basic test', () => {
   })
 })
 
+/**
+ * Complex UT mimicing real scenarios with one action handled by multiple sliced states as well as reducers for a the same sliced state
+*/
 describe('roth.js complex scenario', () => {
   interface Head {
       hasHeadache: boolean;
