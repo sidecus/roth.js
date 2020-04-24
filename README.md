@@ -27,9 +27,9 @@ enum MyActions {
   UPDATE_STATE_2 = 'UPDATE_STATE_2',
   RESET_BOTH_STATES = 'RESET_BOTH_STATES'
 }
-const updateState1 = createActionCreator<MyActions.UPDATE_STATE_1, number>(MyActions.UPDATE_STATE_1)
-const updateState2 = createActionCreator<MyActions.UPDATE_STATE_2, number>(MyActions.UPDATE_STATE_2)
-const resetStates = createActionCreator<MyActions.RESET_BOTH_STATES>(MyActions.RESET_BOTH_STATES)
+const updateState1 = createActionCreator<number>(MyActions.UPDATE_STATE_1)
+const updateState2 = createActionCreator<number>(MyActions.UPDATE_STATE_2)
+const resetStates = createActionCreator(MyActions.RESET_BOTH_STATES)
 type UpdateState1Action = ReturnType<typeof updateState1>
 type UpdateState2Action = ReturnType<typeof updateState2>
 type ResetAction = ReturnType<typeof resetStates>
@@ -58,10 +58,6 @@ export const State1Component = () => {
 ### Bonus - Use createSlicedReducer to help define reducers and avoid big switches
 ```tsx
 // Define reducers.
-type UpdateState1Reducer = Reducer<State1Type, UpdateState1Action>
-type ResetState1Reducer = Reducer<State1Type, ResetAction>
-type UpdateState2Reducer = Reducer<State2Type, UpdateState2Action>
-type ResetState2Reducer = Reducer<State2Type, ResetAction>
 const updateState1Reducer: UpdateState1Reducer = (state, action) => {...}
 const resetState1Reducer: Reducer<State1Type, ResetAction> = (state, action) => {...}
 const updateState2Reducer: UpdateState2Reducer = (state, action) => {...}
