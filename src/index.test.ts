@@ -2,48 +2,20 @@ import { Dispatch, combineReducers } from 'redux'
 import { createActionCreator, Action, createSlicedReducer, Reducer, createdBoundActionCreators } from './index'
 
 /**
- * Test Action creator typing
- */
-/*
-describe('roth.js createActionCreator type test', () => {
-  test('createActionCreator typings', () => {
-    type StringUnionToIntersection<U> = (U extends string ? ((k: U) => void) : never) extends ((k: infer I) => void) ? I : never
-    type StringUnionGuard<U> = StringUnionToIntersection<U> extends never ? U : never
-    type a = StringUnionGuard<'a' | string>
-    type b = StringUnionGuard<'a' | 'b'>
-    type c = StringUnionGuard<4 | 3>
-    type d = StringUnionGuard<'4' | 3>
-    type e = StringUnionGuard<string>
-    type f = StringUnionGuard<'a'>
-    type h = StringUnionToIntersection<'a'>
-    type i = StringUnionToIntersection<string>
-    type j = StringUnionGuard<'a'>
-
-    const numberFunc = (arg: number) => { return { type: 'numberFunc', payload: arg } as Action<ActionType, number> }
-    const stringFunc = (arg: string) => { return { type: 'stringFunc', payload: arg } as Action<ActionType, string> }
-    const map = { numberFunc: numberFunc, stringFunc: stringFunc, value: 3 }
-    type MapProperties = DispatchableActionPropertyNames<typeof map>
-    type MapType = NamedActionCreators<typeof map>
-    type NamedMapType = BoundActionCreators<MapType>
-  })
-})
-*/
-
-/**
  * Test basic functionality for action creator, reducer and bound action creator
  */
 describe('roth.js basic test', () => {
   test('createActionCreator creates proper action creators', () => {
     // number as payload
     const numberActionType = 'number action'
-    const numberActionCreator = createActionCreator<typeof numberActionType, number>(numberActionType)
+    const numberActionCreator = createActionCreator<number>(numberActionType)
     const numberAction = numberActionCreator(3)
     expect(numberAction.payload).toBe(3)
     expect(numberAction.type).toBe(numberActionType)
 
     // no payload
     const noPayloadActionType = 'nopayload action'
-    const noPayloadActionCreator = createActionCreator<typeof noPayloadActionType>(noPayloadActionType)
+    const noPayloadActionCreator = createActionCreator(noPayloadActionType)
     const noPayloadAction = noPayloadActionCreator()
     expect(noPayloadAction.type).toBe(noPayloadActionType)
   })
@@ -71,7 +43,7 @@ describe('roth.js basic test', () => {
     }
 
     let state = { numberField: 0, numberField2: 0, stringField: '' }
-    const slicedReducer = createSlicedReducer<State, Action<'addnumber'> | Action<'setstring', string>>(state, {
+    const slicedReducer = createSlicedReducer(state, {
       // one action triggers two number reducers
       addnumber: [numberReducer, numberReducer2],
       // single reducer for the string action
@@ -135,11 +107,9 @@ describe('roth.js complex scenario', () => {
   }
 
   // action creators and action types
-  const workOutActionCreator = createActionCreator<Activity.Workout, number>(Activity.Workout)
-  const sleepActionCreator = createActionCreator<Activity.Sleep, number>(Activity.Sleep)
-  const seeDoctorActionCreator = createActionCreator<Activity.SeeDoctor>(Activity.SeeDoctor)
-  type HeadActions = ReturnType<typeof sleepActionCreator> | ReturnType<typeof seeDoctorActionCreator> | ReturnType<typeof workOutActionCreator>
-  type MuscleActions = ReturnType<typeof workOutActionCreator> | ReturnType<typeof seeDoctorActionCreator>
+  const workOutActionCreator = createActionCreator<number>(Activity.Workout)
+  const sleepActionCreator = createActionCreator<number>(Activity.Sleep)
+  const seeDoctorActionCreator = createActionCreator(Activity.SeeDoctor)
 
   const sleepHeadacheReducer: Reducer<Head, ReturnType<typeof sleepActionCreator>> = (state, action) => {
     let hasHeadache = state.hasHeadache
@@ -201,12 +171,12 @@ describe('roth.js complex scenario', () => {
   const DefaultBody = { hasMusclePain: false, bodyMassIndex: 25 }
 
   // create sliced reducers
-  const slicedHeadReducer = createSlicedReducer<Head, HeadActions>(DefaultHead, {
+  const slicedHeadReducer = createSlicedReducer(DefaultHead, {
     [Activity.SeeDoctor]: [seeDoctorHeadacheReducer],
     [Activity.Sleep]: [sleepHeadacheReducer],
     [Activity.Workout]: [workOutHeadacheReducer]
   })
-  const slicedBodyReducer = createSlicedReducer<Body, MuscleActions>(DefaultBody, {
+  const slicedBodyReducer = createSlicedReducer(DefaultBody, {
     [Activity.Workout]: [workOutMusclePainReducer, bodyMassIndexReducer],
     [Activity.SeeDoctor]: [seeDoctormusclePainReducer]
   })

@@ -3,6 +3,17 @@ import { useDispatch } from 'react-redux'
 import { Action as ReduxAction, Dispatch } from 'redux'
 
 /**
+ * ============Utility type helpers============================
+ */
+
+/**
+ * Utility type to select the list of properties with type as P from a type T
+ * @template T
+ * @template P
+ */
+export type PickPropertyNames<T, P> = { [K in keyof T]: T[K] extends P ? K : never }[keyof T]
+
+/**
  * ============Action related type definitions============================
  */
 
@@ -30,16 +41,16 @@ export interface Action<
  * @template P        action payload type
  * @param actionType  action type value
  */
-function actionCreatorFactory<A extends ActionType, P>(
-  actionType: A
-): (payload: P) => Action<A, P>
-function actionCreatorFactory<A extends ActionType>(
-  actionType: A
-): () => Action<A>
-function actionCreatorFactory<A extends ActionType>(
-  actionType: A
-): (payload?: unknown) => Action<A, unknown> {
-  return (payload?: unknown): Action<A, unknown> => {
+function actionCreatorFactory(
+  actionType: ActionType
+): () => Action<ActionType>
+function actionCreatorFactory<P>(
+  actionType: ActionType
+): (payload: P) => Action<ActionType, P>
+function actionCreatorFactory(
+  actionType: ActionType
+): (payload?: unknown) => Action<ActionType, unknown> {
+  return (payload?: unknown): Action<ActionType, unknown> => {
     return { type: actionType, payload: payload }
   }
 }
@@ -61,9 +72,11 @@ export const createActionCreator = actionCreatorFactory
  */
 export type Reducer<S, A extends Action<ActionType, unknown>> = (state: S, action: A) => S
 
-type ActionReducersMap<S, A extends Action<ActionType, unknown>> = {
-  readonly [P in A['type']]: Reducer<S, A extends Action<P, infer X> ? Action<P, X> : never>[]
-}
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type ActionReducersMap<S, M> = Pick<M, PickPropertyNames<M, Array<Reducer<S, any>>>>
+type AllowedActions<S, M extends ActionReducersMap<S, M>> = {
+  readonly [K in keyof M]: M[K] extends Array<Reducer<S, Action<infer P, infer X>>> ? Action<P, X> : never
+}[keyof M]
 
 /**
  * Creates a sliced state reducer based on default state and a action to reducer(s) mapping.
@@ -73,15 +86,15 @@ type ActionReducersMap<S, A extends Action<ActionType, unknown>> = {
  * @param defaultState      default value used to initialize the state
  * @param actionReducerMap  action to reducer(s) map on the current slice of state. One action can map to multiple reducers.
  */
-export const createSlicedReducer = <S, A extends Action<ActionType, unknown>>(
+export const createSlicedReducer = <S, M extends ActionReducersMap<S, M>>(
   defaultState: S,
-  actionReducerMap: ActionReducersMap<S, A>
+  actionReducerMap: M
 ) => {
-  return (state: S = defaultState, action: A): S => {
+  return (state: S = defaultState, action: AllowedActions<S, M>): S => {
     let newState = state
     const reducers = actionReducerMap[action.type]
     if (reducers) {
-      reducers.forEach((reduce: Reducer<S, A>) => (newState = reduce(newState, action)))
+      reducers.forEach((reduce: Reducer<S, AllowedActions<S, M>>) => (newState = reduce(newState, action)))
     }
     return newState
   }
@@ -97,13 +110,11 @@ type AnyDispatch = Dispatch<any>
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type DispatchableAction = (...args: any) => (Action<ActionType, unknown> | ((dispatch: AnyDispatch) => unknown))
 
-type DispatchableActionProperties<T> = { [K in keyof T]: T[K] extends DispatchableAction ? K : never }[keyof T]
-
 /**
  * A type with only name to action creator mapping (action creator can create normal action or thunk).
  * @template M  A type which contains name to action creator mapping
  */
-type NamedActionCreators<M> = Pick<M, DispatchableActionProperties<M>>
+type NamedActionCreators<M> = Pick<M, PickPropertyNames<M, DispatchableAction>>
 
 /**
  * Type used by createdBoundActionCreators as the return type.

@@ -33,8 +33,6 @@ const resetStates = createActionCreator<MyActions.RESET_BOTH_STATES>(MyActions.R
 type UpdateState1Action = ReturnType<typeof updateState1>
 type UpdateState2Action = ReturnType<typeof updateState2>
 type ResetAction = ReturnType<typeof resetStates>
-type State1Actions = UpdateState1Action | ResetAction
-type State2Actions = UpdateState2Action | ResetAction
 ```
 
 ### Use useBoundActionCreators or useMemoizedBoundActionCreators hooks to expose "bound" action creators
@@ -73,12 +71,12 @@ const resetState2Reducer: ResetState2Reducer = (state, action) => {...}
 // without having to use switch statements.
 // This can also be achieved with combineReducers but it'll likely result in states
 // being sliced too much. It's your call to make.
-const state1Reducer = createSlicedReducer<State1Type, State1Actions>(
+const state1Reducer = createSlicedReducer(
   DefaultState1, {
     [MyActions.UPDATE_STATE_1]: [updateState1Reducer],
     [MyActions.RESET_BOTH_STATES]: [resetState1Reducer]
 })
-const state2Reducer = createSlicedReducer<State2Type, State2Actions>(
+const state2Reducer = createSlicedReducer(
   DefaultState2, {
     [MyActions.UPDATE_STATE_2]: [updateState2Reducer],
     [MyActions.RESET_BOTH_STATES]: [resetState2Reducer]
