@@ -109,7 +109,7 @@ type NamedActionCreators<M> = Pick<M, PickPropertyNames<M, DispatchableAction>>;
  * It's an object with named properties as bounded action creators. Only difference with NamedActionCreators is the return type (unknown after dispatch)
  * @template M  NamedActionCreators
  */
-type BoundActionCreators<M extends NamedActionCreators<M>> = {
+type BoundActions<M extends NamedActionCreators<M>> = {
   [K in keyof M]: (...args: Parameters<M[K]>) => unknown;
 };
 
@@ -123,8 +123,8 @@ type BoundActionCreators<M extends NamedActionCreators<M>> = {
 export const createdBoundActionCreators = <M extends NamedActionCreators<M>>(
   dispatch: AnyDispatch,
   map: M
-): BoundActionCreators<M> => {
-  const result = {} as BoundActionCreators<M>;
+): BoundActions<M> => {
+  const result = {} as BoundActions<M>;
 
   for (const key in map) {
     // For each key in the map object, create a new object which has same set of keys but with action creators replaced with bound action creators
@@ -138,23 +138,13 @@ export const createdBoundActionCreators = <M extends NamedActionCreators<M>>(
 };
 
 /**
- * Custom hooks to create an object containing named action creators with dispatch bound automatically using redux hooks.
- * @template M  type of the object contains named action creators (name to primitive action creator or thunk action creator)
- * @param map   the object contains named action creators.
- */
-export const useBoundActionCreators = <M extends NamedActionCreators<M>>(map: M): BoundActionCreators<M> => {
-  const dispatch = useDispatch();
-  return createdBoundActionCreators(dispatch, map);
-};
-
-/**
  * Custom hooks to create a memoized object containing named action creators with dispatch bound automatically using redux hooks.
  * Object is memoized so won't get created each time you use this custom hooks.
  * @template M  type of the object contains named action creators (name to primitive action creator or thunk action creator)
  * @param map   the object contains named action creators. !!IMPORTANT!! - Don't pass a function scoped object for this
  * otherwise it'll defeat the memoization.
  */
-export const useMemoizedBoundActionCreators = <M extends NamedActionCreators<M>>(map: M): BoundActionCreators<M> => {
+export const useBoundActions = <M extends NamedActionCreators<M>>(map: M): BoundActions<M> => {
   const dispatch = useDispatch();
   // Use useMemo to memoize the returned BoundedNamedActionCreators object so that we don't recreate it each time createdNamedBoundedActionCreators is called.
   const memoizedDispatchers = useMemo(() => createdBoundActionCreators(dispatch, map), [dispatch, map]);
@@ -165,4 +155,4 @@ export const useMemoizedBoundActionCreators = <M extends NamedActionCreators<M>>
 /**
  * Alias for useMemoizedBoundActionCreators
  */
-export const useBoundActions = useMemoizedBoundActionCreators;
+export const useMemoizedBoundActionCreators = useBoundActions;

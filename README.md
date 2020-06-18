@@ -1,36 +1,30 @@
 # roth.js
 
-> roth.js (Redux On The Hooks) is a TypeScript library to help improve code readability when dispatching actions. It also provides an opioninated sliced reducer api to help avoid big switches in reducer definitions.
+> roth.js is a tiny Javascript library to help improve code readability when dispatching Redux actions. It also provides an opioninated sliced reducer api to help avoid big switches in reducer definitions.
 
 [![NPM](https://img.shields.io/npm/v/roth.js.svg)](https://www.npmjs.com/package/roth.js) [![JavaScript Style Guide](https://img.shields.io/badge/code_style-standard-brightgreen.svg)](https://standardjs.com)![CI](https://github.com/sidecus/roth.js/workflows/CI/badge.svg?branch=master)
 
 ## Install
 
-```bash
+```Shell
 npm install --save roth.js
 ```
 
 ## Usage
-### createActionCreator and useMemoizedBoundActions
+### createActionCreator and useBoundActions
 First define your actions with ```createActionCreator```:
-```typescript
-// action.ts
-enum MyActions {
-  UPDATE_STATE = 'UPDATE_STATE',
-  RESET_STATES = 'RESET_STATE'
-}
-export const updateState = createActionCreator<number>(MyActions.UPDATE_STATE);
-export const resetState = createActionCreator(MyActions.RESET_STATE);
+```TS
+export const updateState = createActionCreator<'UpdateState');
+export const resetState = createActionCreator('ResetState');
 
-// Define a global object which contains the named action creators
+// Define a global object which contains the action creators.
+// Generate dispatch bound versions of the actions and expose it as one object with useMyBoundActions hook
 const namedActionCreators = { updateState, resetState };
-
-// Define a custom hook using useBoundActions and pass in namedActionCreators as the parameter
 export const useMyBoundActions = () => useBoundActions(namedActionCreators);
 ```
 Now in your own component, instead of:
-```typescript
-// SomeComponent.tsx
+```TSX
+import { updateState, updateState /*and other actions*/ } from './actions';
 export const SomeComponent = () => {
   const dispatch = useDispatch();
   return (
@@ -39,7 +33,8 @@ export const SomeComponent = () => {
   );
 ```
 You can do this - note there is **no dispatch** and code is a bit more natural to read:
-```typescript
+```TSX
+import { useMyBoundActions } from './actions';
 export const SomeComponent = () => {
   const { updateState, resetState } = useMyBoundActions();
   return (
@@ -48,8 +43,7 @@ export const SomeComponent = () => {
   );
 };
 ```
-Here is a full sample project using this to implement a TODO app: [Code sample](https://github.com/sidecus/reactstudy/tree/master/src/ReduxHooks). Here is the corresponding [Demo site](https://sidecus.github.io/reactstudy/).
-The sample project also leverages other popular libraries e.g. reselect.js/redux-thunk etc.
+Here is a full sample project using this to implement a TODO app: [Code sample](https://github.com/sidecus/reactstudy/tree/master/src/ReduxHooks). The sample project also leverages other popular libraries e.g. reselect.js/redux-thunk etc.
 
 ### Opininated bonus api createSlicedReducer
 Use *createSlicedReducer* to glue reducers on the same sliced state without having to use switch statements. This can also be achieved with combineReducers, but it might lead to small granular and verbose state definition.
@@ -67,6 +61,5 @@ const rootReducer = combineReducers({ state1: myReducer, state2: someOtherReduce
 export const store = createStore(rootReducer, composeWithDevTools(applyMiddleware(thunk)));
 ```
 
-## License
-
+# Happy coding. Peace.
 MIT © [sidecus](https://github.com/sidecus)
