@@ -19,6 +19,7 @@ const actionCreators = {
 };
 
 describe('useMemoizedBoundActions behaviors', () => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const dispatchResultRecorder = {} as any;
   const fakeDispatch = (action: Action<string, unknown>) => {
     let payload = action.payload;
@@ -26,7 +27,8 @@ describe('useMemoizedBoundActions behaviors', () => {
       payload = 'void';
     }
     dispatchResultRecorder[action.type] = payload;
-  }
+  };
+
   useDispatchMock.mockImplementation(() => fakeDispatch);
 
   it('Glues dispatch and action creators', () => {
