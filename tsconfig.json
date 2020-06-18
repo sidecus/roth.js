@@ -32,6 +32,7 @@
     "src"
   ],
   "exclude": [
+    "src/*.test.*",
     "node_modules",
     "dist",
     ".rts2_cache_*"
