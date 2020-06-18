@@ -1,6 +1,6 @@
 {
   "name": "roth.js",
-  "version": "2.0.2",
+  "version": "2.0.3",
   "description": "roth.js (Redux On The Hooks) is a library to help simplify redux action and state management using React Hooks.",
   "author": "sidecus",
   "license": "MIT",
