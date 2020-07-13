@@ -1,6 +1,6 @@
 # roth.js
 
-> roth.js is a tiny Javascript library to help improve code readability when dispatching Redux actions. It also provides an opioninated sliced reducer api to help avoid big switches in reducer definitions.
+> Tiny react-redux extension library for easier action/dispatch/reducer management
 
 [![NPM](https://img.shields.io/npm/v/roth.js.svg)](https://www.npmjs.com/package/roth.js) [![JavaScript Style Guide](https://img.shields.io/badge/code_style-standard-brightgreen.svg)](https://standardjs.com)![CI](https://github.com/sidecus/roth.js/workflows/CI/badge.svg?branch=master)
 
@@ -11,55 +11,58 @@ npm install --save roth.js
 ```
 
 ## Usage
-### createActionCreator and useBoundActions
-First define your actions with ```createActionCreator```:
-```TS
-export const updateState = createActionCreator<'UpdateState');
-export const resetState = createActionCreator('ResetState');
+### **useBoundActions**
+Dispatch actions and thunk easily with useBoundActions convenience api:
+```tsx
+// **** action.ts ****
+// Call useBoundActions hook to automatically bind action creators to dispatch.
+// Here we are creating a custom hook named useAreaActions from it.
+const areaActionCreators = { setNumber, setString };
+export const useAreaActions = () => useBoundActions(areaActionCreators);
 
-// Define a global object which contains the action creators.
-// Generate dispatch bound versions of the actions and expose it as one object with useMyBoundActions hook
-const namedActionCreators = { updateState, resetState };
-export const useMyBoundActions = () => useBoundActions(namedActionCreators);
-```
-Now in your own component, instead of:
-```TSX
-import { updateState, updateState /*and other actions*/ } from './actions';
+// **** SomeComponent.tsx ****
 export const SomeComponent = () => {
-  const dispatch = useDispatch();
+  const { setNumber, setString } = useAreaActions();
   return (
-    <button onclick={() => dispatch(updateState(Math.random()))}>Update State</button>
-    <button onclick={() => dispatch(resetState())}>Reset State</button>
-  );
-```
-You can do this - note there is **no dispatch** and code is a bit more natural to read:
-```TSX
-import { useMyBoundActions } from './actions';
-export const SomeComponent = () => {
-  const { updateState, resetState } = useMyBoundActions();
-  return (
-    <button onclick={() => updateState(Math.random())}>Update State</button>
-    <button onclick={resetState}>Reset State</button>
+    <>
+      <button onclick={() => setNumber(someNumber)}>SetNumber</button>
+      <button onclick={() => setString(someString))}>SetString</button>
+    </>
   );
 };
 ```
-Here is a full sample project using this to implement a TODO app: [Code sample](https://github.com/sidecus/reactstudy/tree/master/src/ReduxHooks). The sample project also leverages other popular libraries e.g. reselect.js/redux-thunk etc.
+Compared to the tranditional way (```useDispatch``` and then ```dispatch(numberAction(someNumber))``` ), the code is shorter, easier to read, and also convenient to unit test as well since you can just mock the new custom hook without having to worry about mocking dispatch.
+A full sample project using this to implement a TODO app can be found [here](https://github.com/sidecus/reactstudy/tree/master/src/ReduxHooks). The sample project also leverages other popular libraries e.g. reselect.js/redux-thunk etc.
 
-### Opininated bonus api createSlicedReducer
-Use *createSlicedReducer* to glue reducers on the same sliced state without having to use switch statements. This can also be achieved with combineReducers, but it might lead to small granular and verbose state definition.
-```typescript
+### **createActionCreator**
+If you are using actions with action type as string and with none or single payload, you can define your actions with the built in ```createActionCreator``` api easily:
+```tsx
+export const noPayloadAction = createActionCreator('NoPayloadAction');
+export const stringPayloadAction = createActionCreator<string>('StringAction');
+export const customPayloadAction = createActionCreator<MyPayload>('MyPayloadAction');
+```
+
+### **createSlicedReducer**
+When creating reducers, it's common that we use if/else or switch statements to check action type and reduce based on that. ```createSlicedReducer``` api can help make that easier without branching statements. It handles action to reducer mapping for your automatically based on the passed in map. The return type of ```createSlicedReducer``` is a reducer by itself and you can pass that into combinedReducers.
+```tsx
 // Define reducers.
-const myStateReducer: Reducer<MyState, MyStateActions> = (state, action) => {...};
-const myReducer = createSlicedReducer(
-  DefaultState1, {
-    [MyActions.UPDATE_STATE_1]: [updateState1Reducer],
-    [MyActions.RESET_BOTH_STATES]: [resetState1Reducer]
+const numberReducer: Reducer<MyState, Action<number>> = ...;
+const numberReducer2: Reducer<MyState, Action<number>> = ...;
+const stringReducer: Reducer<MyState, Action<string>> = ...;
+
+// Create a sliced reducer on current state slice
+const mySlicedReducer = createSlicedReducer(DefaultMyState, {
+    [MyActions.NumberAction]: [numberReducer, numberReducer2],
+    [MyActions.StringAction]: [stringReducer]
 });
 
-// Get root reducer and construct store as what you normally do
-const rootReducer = combineReducers({ state1: myReducer, state2: someOtherReducer});
+// Get root reducer and construct store as usual
+const rootReducer = combineReducers({ myState: mySlicedReducer, state2: otherReducer });
 export const store = createStore(rootReducer, composeWithDevTools(applyMiddleware(thunk)));
 ```
+
+## Changelog
+v3.0.0: Switch to bindActionCreators to further reduce package size and improve typing for ActionReducerMap.
 
 # Happy coding. Peace.
 MIT © [sidecus](https://github.com/sidecus)

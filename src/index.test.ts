@@ -1,11 +1,38 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { Dispatch, combineReducers } from 'redux';
-import { createActionCreator, Action, createSlicedReducer, Reducer, createdBoundActionCreators } from './index';
+import { combineReducers } from 'redux';
+import { createActionCreator, Action, createSlicedReducer, Reducer } from './index';
 
 /**
  * Test basic functionality for action creator, reducer and bound action creator
  */
 describe('roth.js basic test', () => {
+  // test('reducer type tests', () => {
+  //   const numberReducer = (s: number, a: Action<number>) => s + a.payload;
+  //   const numberReducer2 = (s: number, a: Action<number>) => s - a.payload;
+  //   const stringReducer = (s: string, a: Action<string>) => s + a.payload;
+  //   const nopayloadstringReducer = (s: string, a: Action) => s + a.payload;
+
+  //   // Map with diferent state type
+  //   const map = {
+  //     number: [numberReducer, numberReducer2],
+  //     string: [stringReducer]
+  //   };
+
+  //   // Type error - Reducers with unmatching state type
+  //   createSlicedReducer(3, map);
+
+  //   // Map with different ation type
+  //   const map2 = {
+  //     StringAction: [stringReducer, nopayloadstringReducer]
+  //   };
+
+  //   const r = createSlicedReducer('', map2);
+  //   // Type error below - action paramter is inconsistent
+  //   r('state', {} as Action<string>);
+  //   r('state', {} as Action);
+  //   r('state', {} as Action<number>);
+  // });
+
   test('createActionCreator creates proper action creators', () => {
     // number as payload
     const numberActionType = 'number action';
@@ -28,17 +55,17 @@ describe('roth.js basic test', () => {
   }
 
   test('createSlicedReducer creates correct reducer for a slice of the state', () => {
-    const numberReducer: Reducer<State, Action<string>> = (s: State) => {
+    const numberReducer: Reducer<State, Action> = (s: State) => {
       s.numberField = s.numberField + 1;
       return { ...s };
     };
 
-    const numberReducer2: Reducer<State, Action<string>> = (s: State) => {
+    const numberReducer2: Reducer<State, Action> = (s: State) => {
       s.numberField2 = s.numberField2 + 1;
       return { ...s };
     };
 
-    const stringReducer: Reducer<State, Action<string, string>> = (s, action) => {
+    const stringReducer: Reducer<State, Action<string>> = (s, action) => {
       s.stringField = action.payload;
       return { ...s };
     };
@@ -51,44 +78,26 @@ describe('roth.js basic test', () => {
       setstring: [stringReducer]
     });
 
+    const addNumberAction = createActionCreator('addnumber')();
+    const setStringAction = createActionCreator<string>('setstring')('newstring');
+
     // first reducer should update both numberField and numberField2
-    state = slicedReducer(state, { type: 'addnumber' } as Action<'addnumber'>);
+    state = slicedReducer(state, addNumberAction);
     expect(state.numberField).toBe(1);
     expect(state.numberField2).toBe(1);
     expect(state.stringField).toBe('');
 
     // should update both numberField and numberField2 again, and no change to stringField
-    state = slicedReducer(state, { type: 'addnumber' } as Action<'addnumber'>);
+    state = slicedReducer(state, addNumberAction);
     expect(state.numberField).toBe(2);
     expect(state.numberField2).toBe(2);
     expect(state.stringField).toBe('');
 
     // should only update stringField
-    state = slicedReducer(state, { type: 'setstring', payload: 'newstring' } as Action<'setstring', string>);
+    state = slicedReducer(state, setStringAction);
     expect(state.numberField).toBe(2);
     expect(state.numberField2).toBe(2);
     expect(state.stringField).toBe('newstring');
-  });
-
-  // Fake dispatch which just returns the action object for UT purpose.
-  const dispatchMock: Dispatch<Action<string, unknown>> = <T extends Action<string, unknown>>(action: T) => action;
-
-  test('createdNamedBoundedActionCreators constructs correct named bounded action creator map', () => {
-    const result = createdBoundActionCreators(dispatchMock, {
-      setNumber: (p: number) => {
-        return { type: 'setNumber', payload: p };
-      },
-      setString: (p: string) => {
-        return { type: 'setString', payload: p };
-      },
-      noPayload: () => {
-        return { type: 'noPayload' } as Action<string>;
-      }
-    });
-
-    expect(result.setNumber(3)).toEqual({ type: 'setNumber', payload: 3 });
-    expect(result.setString('random')).toEqual({ type: 'setString', payload: 'random' });
-    expect(result.noPayload()).toEqual({ type: 'noPayload', payload: undefined });
   });
 });
 
