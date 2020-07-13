@@ -1,18 +1,18 @@
 {
   "name": "roth.js",
-  "version": "2.0.3",
-  "description": "roth.js (Redux On The Hooks) is a library to help simplify redux action and state management using React Hooks.",
+  "version": "3.0.0",
+  "description": "roth.js - Tiny react-redux extension library for easier action/dispatch/reducer management",
   "author": "sidecus",
   "license": "MIT",
   "repository": "sidecus/roth.js",
   "keywords": [
     "hooks",
-    "redux",
-    "react",
     "dispatch",
     "actions",
-    "store",
     "reducer",
+    "react-redux",
+    "react",
+    "redux",
     "roth.js"
   ],
   "main": "dist/index.js",
@@ -22,12 +22,12 @@
     "node": ">=10"
   },
   "scripts": {
-    "build": "microbundle",
-    "start": "microbundle --no-compress",
+    "build": "microbundle --tsconfig tsconfig.build.json",
+    "start": "microbundle  --tsconfig tsconfig.build.json --no-compress",
     "test": "run-s test:unit test:lint",
-    "test:lint": "eslint --ext ts .",
-    "test:unit": "cross-env CI=1 react-scripts test --env=jsdom",
-    "test:watch": "react-scripts test --env=jsdom"
+    "test:lint": "eslint --ext ts,tsx .",
+    "test:unit": "cross-env CI=1 tsc && react-scripts test --env=jsdom",
+    "test:watch": "tsc && react-scripts test --env=jsdom"
   },
   "peerDependencies": {
     "react": "^16.0.0",
@@ -64,7 +64,8 @@
     "react-redux": "^7.2.0",
     "react-scripts": "^3.4.1",
     "react-test-renderer": "^16.13.1",
-    "redux": "^4.0.5"
+    "redux": "^4.0.5",
+    "typescript": "3.9.2"
   },
   "files": [
     "dist"

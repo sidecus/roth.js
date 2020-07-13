@@ -1,6 +1,7 @@
-import { createActionCreator, useBoundActions, Action } from './index';
+import { createActionCreator, useBoundActions } from './index';
 import { renderHook } from '@testing-library/react-hooks';
 import { useDispatch } from 'react-redux';
+import { AnyAction } from 'redux';
 
 jest.mock('react-redux', () => ({
   ...jest.requireActual('react-redux'),
@@ -9,19 +10,16 @@ jest.mock('react-redux', () => ({
 
 const useDispatchMock = useDispatch as jest.Mock;
 
-const NumberAction = createActionCreator<number>('numberaction');
-const StringAction = createActionCreator<string>('stringaction');
-const VoidAction = createActionCreator('voidaction');
 const actionCreators = {
-  numberAction: NumberAction,
-  stringAction: StringAction,
-  voidAction: VoidAction
+  numberAction: createActionCreator<number>('numberaction'),
+  stringAction: createActionCreator<string>('stringaction'),
+  voidAction: createActionCreator('voidaction')
 };
 
-describe('useMemoizedBoundActions behaviors', () => {
+describe('useBoundActions behaviors', () => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const dispatchResultRecorder = {} as any;
-  const fakeDispatch = (action: Action<string, unknown>) => {
+  const fakeDispatch = (action: AnyAction) => {
     let payload = action.payload;
     if (payload === undefined) {
       payload = 'void';
@@ -32,6 +30,7 @@ describe('useMemoizedBoundActions behaviors', () => {
   useDispatchMock.mockImplementation(() => fakeDispatch);
 
   it('Glues dispatch and action creators', () => {
+    useDispatchMock.mockClear();
     const { result } = renderHook(() => useBoundActions(actionCreators));
 
     expect(result.error).toBeUndefined();

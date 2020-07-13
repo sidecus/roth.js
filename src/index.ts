@@ -1,47 +1,44 @@
-import { useMemo } from 'react';
 import { useDispatch } from 'react-redux';
-import { Action as ReduxAction, Dispatch } from 'redux';
+import { Action as ReduxAction, bindActionCreators, ActionCreatorsMapObject } from 'redux';
 
 /**
- * ============Utility type helpers============================
+ * ============Hooks based bound action creator related type definitions=========================
  */
 
 /**
- * Utility type to select the list of properties with type as P from a type T
- * @template T
- * @template P
+ * Custom hooks to create an object containing named action creators with dispatch bound automatically using redux hooks.
+ * Object is memoized so won't get created each time you use this custom hooks.
+ * Version 3.0.0 - switch to bindActionCreators instead of our own implementation and remove memoization.
+ * @template M  type of the object contains named action creators (plain action creator or thunk action creator)
+ * @param map   the object contains named action creators.
  */
-export type PickPropertyNames<T, P> = { [K in keyof T]: T[K] extends P ? K : never }[keyof T];
+export const useBoundActions = <M extends ActionCreatorsMapObject>(map: M): M => {
+  const dispatch = useDispatch();
+  return bindActionCreators(map, dispatch);
+};
 
 /**
  * ============Action related type definitions============================
  */
 
 /**
- * action type
- */
-type ActionType = string;
-
-/**
  * StringAction for all actions with string as the action type
- * @template A    action type
  * @template P    payload type
  */
-export interface Action<A extends ActionType, P = never> extends ReduxAction<A> {
+export interface Action<P = undefined> extends ReduxAction<string> {
   payload: P;
 }
 
 /**
  * Factory method to help create an action creator.
- * We use method overloads to allow proper typing on actions with or without a payload
- * @template A        action type
+ * Method overloads to allow proper typing on actions with or without a payload
  * @template P        action payload type
- * @param actionType  action type value
+ * @param actionType  action type value string
  */
-function actionCreatorFactory(actionType: ActionType): () => Action<ActionType>;
-function actionCreatorFactory<P>(actionType: ActionType): (payload: P) => Action<ActionType, P>;
-function actionCreatorFactory(actionType: ActionType): (payload?: unknown) => Action<ActionType, unknown> {
-  return (payload?: unknown): Action<ActionType, unknown> => {
+function actionCreatorFactory(actionType: string): () => Action;
+function actionCreatorFactory<P>(actionType: string): (payload: P) => Action<P>;
+function actionCreatorFactory(actionType: string): (payload?: unknown) => Action<unknown> {
+  return (payload?: unknown): Action<unknown> => {
     return { type: actionType, payload: payload };
   };
 }
@@ -61,98 +58,46 @@ export const createActionCreator = actionCreatorFactory;
  * @template S  state type
  * @template A  action type
  */
-export type Reducer<S, A extends Action<ActionType, unknown>> = (state: S, action: A) => S;
+export type Reducer<S, A extends Action<unknown>> = (s: S, a: A) => S;
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type ActionReducersMap<S, M> = Pick<M, PickPropertyNames<M, Array<Reducer<S, any>>>>;
-type AllowedActions<S, M extends ActionReducersMap<S, M>> = {
-  readonly [K in keyof M]: M[K] extends Array<Reducer<S, Action<infer P, infer X>>> ? Action<P, X> : never;
+/**
+ * Reducer array which contains reducers operating on the same type of action and state
+ */
+export type ReducerArray<S, A extends Action<unknown>> = Array<Reducer<S, A>>;
+
+/**
+ * Action reducer map type. Each entry is an action type mapped to a reducer array handling that action.
+ * Reducers used in the map must be operating on the same state type (to be specific, it's a slice of the final state).
+ * This type will strip properties which doesn't map to a reducer array on current state.
+ * @template S State type
+ * @template M Action reducer map
+ */
+export type ActionReducerMap<S, M> = {
+  readonly [K in keyof M]: M[K] extends ReducerArray<S, Action<infer P>> ? ReducerArray<S, Action<P>> : never;
+};
+
+/**
+ * Given a state and action to reducer map for it, return a new union type with all allowed actions.
+ */
+export type AllowedActions<S, M extends ActionReducerMap<S, M>> = {
+  readonly [K in keyof ActionReducerMap<S, M>]: ActionReducerMap<S, M>[K] extends ReducerArray<S, infer A> ? A : never;
 }[keyof M];
 
 /**
  * Creates a sliced state reducer based on default state and a action to reducer(s) mapping.
  * This avoids the gigantic switch statement most people use.
  * @template S              state type
- * @template A              action type
+ * @template M              an action to reducer map (of type ActionReducerMap)
  * @param defaultState      default value used to initialize the state
  * @param actionReducerMap  action to reducer(s) map on the current slice of state. One action can map to multiple reducers.
  */
-export const createSlicedReducer = <S, M extends ActionReducersMap<S, M>>(defaultState: S, actionReducerMap: M) => {
+export const createSlicedReducer = <S, M extends ActionReducerMap<S, M>>(defaultState: S, actionReducerMap: M) => {
   return (state: S = defaultState, action: AllowedActions<S, M>): S => {
     let newState = state;
     const reducers = actionReducerMap[action.type];
     if (reducers) {
-      reducers.forEach((reduce: Reducer<S, AllowedActions<S, M>>) => (newState = reduce(newState, action)));
+      reducers.forEach((reduce: Reducer<S, typeof action>) => (newState = reduce(newState, action)));
     }
     return newState;
   };
 };
-
-/**
- * ============Hooks based bound action creator related type definitions=========================
- */
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type AnyDispatch = Dispatch<any>;
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type DispatchableAction = (...args: any) => Action<ActionType, unknown> | ((dispatch: AnyDispatch) => unknown);
-
-/**
- * A type with only name to action creator mapping (action creator can create normal action or thunk).
- * @template M  A type which contains name to action creator mapping
- */
-type NamedActionCreators<M> = Pick<M, PickPropertyNames<M, DispatchableAction>>;
-
-/**
- * Type used by createdBoundActionCreators as the return type.
- * It's an object with named properties as bounded action creators. Only difference with NamedActionCreators is the return type (unknown after dispatch)
- * @template M  NamedActionCreators
- */
-type BoundActions<M extends NamedActionCreators<M>> = {
-  [K in keyof M]: (...args: Parameters<M[K]>) => unknown;
-};
-
-/**
- * Function to create an object with named dispatcher (bound action creator) based on a name to action creator map.
- * This function separates the logic from useDispatch for easy unit testing.
- * @template M      type of the dispatcher map (name to primitive action creator or thunk action creator)
- * @param dispatch  dispatch object
- * @param map       dispatcher name to action creator map.
- */
-export const createdBoundActionCreators = <M extends NamedActionCreators<M>>(
-  dispatch: AnyDispatch,
-  map: M
-): BoundActions<M> => {
-  const result = {} as BoundActions<M>;
-
-  for (const key in map) {
-    // For each key in the map object, create a new object which has same set of keys but with action creators replaced with bound action creators
-    result[key] = (...args: unknown[]): unknown => {
-      const actionCreator = map[key];
-      return dispatch(actionCreator(...args));
-    };
-  }
-
-  return result;
-};
-
-/**
- * Custom hooks to create a memoized object containing named action creators with dispatch bound automatically using redux hooks.
- * Object is memoized so won't get created each time you use this custom hooks.
- * @template M  type of the object contains named action creators (name to primitive action creator or thunk action creator)
- * @param map   the object contains named action creators. !!IMPORTANT!! - Don't pass a function scoped object for this
- * otherwise it'll defeat the memoization.
- */
-export const useBoundActions = <M extends NamedActionCreators<M>>(map: M): BoundActions<M> => {
-  const dispatch = useDispatch();
-  // Use useMemo to memoize the returned BoundedNamedActionCreators object so that we don't recreate it each time createdNamedBoundedActionCreators is called.
-  const memoizedDispatchers = useMemo(() => createdBoundActionCreators(dispatch, map), [dispatch, map]);
-
-  return memoizedDispatchers;
-};
-
-/**
- * Alias for useMemoizedBoundActionCreators
- */
-export const useMemoizedBoundActionCreators = useBoundActions;
