@@ -1,20 +1,20 @@
+import { useMemo } from 'react';
 import { useDispatch } from 'react-redux';
 import { Action as ReduxAction, bindActionCreators, ActionCreatorsMapObject } from 'redux';
-
-/**
- * ============Hooks based bound action creator related type definitions=========================
- */
 
 /**
  * Custom hooks to create an object containing named action creators with dispatch bound automatically using redux hooks.
  * Object is memoized so won't get created each time you use this custom hooks.
  * Version 3.0.0 - switch to bindActionCreators instead of our own implementation and remove memoization.
+ * Version 3.0.1 - add back memoization. Most apps will use this in useEffect and memoization can help with avoid unwanted rerendering if this is in the dependency tree.
  * @template M  type of the object contains named action creators (plain action creator or thunk action creator)
  * @param map   the object contains named action creators.
  */
 export const useBoundActions = <M extends ActionCreatorsMapObject>(map: M): M => {
   const dispatch = useDispatch();
-  return bindActionCreators(map, dispatch);
+  return useMemo(() => {
+    return bindActionCreators(map, dispatch);
+  }, [dispatch, map]);
 };
 
 /**
